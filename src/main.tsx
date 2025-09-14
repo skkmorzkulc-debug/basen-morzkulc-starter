@@ -1,3 +1,5 @@
+import { logFirebaseRuntime } from './_debug-log'
+if (typeof window !== 'undefined') { logFirebaseRuntime() }
 import { dumpFirebaseEnv } from './firebase-dump'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -159,6 +161,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <RootApp />
   </React.StrictMode>
 )
+
+// RUNTIME DUMP
+if (typeof window !== 'undefined') { dumpFirebaseEnv() }
 
 // RUNTIME DUMP
 if (typeof window !== 'undefined') { dumpFirebaseEnv() }
