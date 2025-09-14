@@ -1,3 +1,4 @@
+import { dumpFirebaseEnv } from './firebase-dump'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
@@ -158,3 +159,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <RootApp />
   </React.StrictMode>
 )
+
+// RUNTIME DUMP
+if (typeof window !== 'undefined') { dumpFirebaseEnv() }
