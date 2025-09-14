@@ -1,11 +1,22 @@
+cd ~/Desktop/"Aplikacja basenowa"/basen-morzkulc-starter
+cat > src/main.tsx << 'EOF'
 // src/main.tsx
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
-import { getAuth, onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut, getRedirectResult } from 'firebase/auth'
 
+import { app, db } from './firebase'
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithRedirect,
+  GoogleAuthProvider,
+  signOut,
+  getRedirectResult,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth'
 
-import { db } from './firebase'
 import {
   doc, getDoc, setDoc, onSnapshot
 } from 'firebase/firestore'
@@ -17,37 +28,38 @@ import Kajaki from './pages/Admin/Kajaki'
 
 import './index.css'
 
-function RootApp(){
-  const auth = getAuth()
-// Handle Google redirect result (needed on production)
-getRedirectResult(auth).catch((err) => {
-  console.error('Google redirect error:', err);
-});
+function RootApp() {
+  // UŻYJEMY TEJ SAMEJ INSTANCJI APP
+  const auth = getAuth(app)
+
+  // Trwała sesja w przeglądarce + obsługa wyniku redirectu
+  setPersistence(auth, browserLocalPersistence).catch(console.error)
+  getRedirectResult(auth).catch((err) => {
+    console.error('Google redirect error:', err)
+  })
 
   const [user, setUser] = React.useState<any>(null)
   const [me, setMe] = React.useState<any>(null)
   const [isAdmin, setIsAdmin] = React.useState(false)
 
-    React.useEffect(() => {
-    let profileUnsub: null | (() => void) = null;
+  React.useEffect(() => {
+    let profileUnsub: null | (() => void) = null
 
     const authUnsub = onAuthStateChanged(auth, async (u) => {
-      // Sprzątanie poprzedniej subskrypcji profilu, jeśli była
-      if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+      if (profileUnsub) { profileUnsub(); profileUnsub = null }
 
-      setUser(u || null);
+      setUser(u || null)
 
       if (u) {
-        // 1) Upewnij się, że profil istnieje (jeśli 1. logowanie → pending)
-        const uref = doc(db, 'users', u.uid);
-        const snap = await getDoc(uref);
+        const uref = doc(db, 'users', u.uid)
+        const snap = await getDoc(uref)
         if (!snap.exists()) {
           await setDoc(uref, {
             uid: u.uid,
             email: u.email || null,
             displayName: u.displayName || null,
             credits: 0,
-            status: 'pending', // oczekuje na akceptację admina
+            status: 'pending',
             roles: { admin:false, organizer:false, instructor:false },
             membership: {
               skkMorzkulcPaid:false,
@@ -55,36 +67,31 @@ getRedirectResult(auth).catch((err) => {
               jarmolowiczGroup:false
             },
             createdAt: new Date()
-          });
+          })
         }
 
-        // 2) Subskrypcja profilu na żywo (status/kredyty/role do topbara)
         profileUnsub = onSnapshot(uref, (ds) => {
-          const data: any = ds.data() || {};
-          setMe({ id: ds.id, ...data });
-          setIsAdmin(!!data?.roles?.admin);
-        });
+          const data: any = ds.data() || {}
+          setMe({ id: ds.id, ...data })
+          setIsAdmin(!!data?.roles?.admin)
+        })
       } else {
-        // wylogowany
-        setMe(null);
-        setIsAdmin(false);
+        setMe(null)
+        setIsAdmin(false)
       }
-    });
+    })
 
-    // Sprzątanie przy odmontowaniu
     return () => {
-      authUnsub();
-      if (profileUnsub) profileUnsub();
-    };
-  }, []);
+      authUnsub()
+      if (profileUnsub) profileUnsub()
+    }
+  }, [auth])
 
-
-  function login(){
+  function login() {
     const provider = new GoogleAuthProvider()
-   signInWithRedirect(auth, provider)
-
+    signInWithRedirect(auth, provider)
   }
-  function logout(){
+  function logout() {
     signOut(auth)
   }
 
@@ -138,3 +145,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <RootApp />
   </React.StrictMode>
 )
+EOF
