@@ -1,6 +1,3 @@
-cd ~/Desktop/"Aplikacja basenowa"/basen-morzkulc-starter
-cat > src/main.tsx << 'EOF'
-// src/main.tsx
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
@@ -29,10 +26,9 @@ import Kajaki from './pages/Admin/Kajaki'
 import './index.css'
 
 function RootApp() {
-  // UŻYJEMY TEJ SAMEJ INSTANCJI APP
   const auth = getAuth(app)
 
-  // Trwała sesja w przeglądarce + obsługa wyniku redirectu
+  // trwała sesja + obsługa wyniku redirectu (po powrocie z Google)
   setPersistence(auth, browserLocalPersistence).catch(console.error)
   getRedirectResult(auth).catch((err) => {
     console.error('Google redirect error:', err)
@@ -145,4 +141,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <RootApp />
   </React.StrictMode>
 )
-EOF
