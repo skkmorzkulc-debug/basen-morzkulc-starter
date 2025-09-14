@@ -14,8 +14,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import AttendeesList from '../components/AttendeesList'
+import type { HourLabel } from '../types';
 
-type HourLabel = 'H1'|'H2'|'SAUNA'
 const PRIVATE_KAYAK_ID = 'PRIVATE'
 const DAY_MS = 24*60*60*1000
 
@@ -48,7 +48,7 @@ export default function Terminy({ user }:{ user:any }){
 
   async function book(pool:any, hour:HourLabel, mode:'regular'|'training'|'sauna', instructorUid?:string){
     if (!user) { alert('Zaloguj się przez Google'); return }
-if (me?.status !== 'active') { alert('Twoje konto czeka na akceptację przez admina.'); setBusyKey(''); return }
+if (me?.status !== 'active') { alert('Twoje konto czeka na akceptację przez admina.'); setBusy(''); return }
 
     const startHHMM = hour==='SAUNA' ? '21:00' : (pool?.hours?.find((h:any)=>h.label===hour)?.start || '21:00')
     const startAt = toStartAt(pool?.date||'1970-01-01', startHHMM)
@@ -62,7 +62,8 @@ if (me?.status !== 'active') { alert('Twoje konto czeka na akceptację przez adm
       if (!window.confirm(msg)) return
     }
 
-    const key = `${pool.id}:${hour}:${mode}`; setBusy(key)
+    const key = `${pool.id}:${hour}:${mode}`; setBusy('')
+
     try {
       const bookingId = `b_${pool.id}_${hour}_${user.uid}`
       const bookingRef = doc(db,'bookings', bookingId)

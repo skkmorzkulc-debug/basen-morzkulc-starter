@@ -1,8 +1,9 @@
 import React from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
+import type { HourLabel } from '../types';
 
-type HourLabel = 'H1'|'H2'
+
 
 type Booking = {
   id: string
