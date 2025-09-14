@@ -2,7 +2,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth'
+import { getAuth, onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut } from 'firebase/auth'
+
 import { db } from './firebase'
 import {
   doc, getDoc, setDoc, onSnapshot
@@ -74,7 +75,8 @@ function RootApp(){
 
   function login(){
     const provider = new GoogleAuthProvider()
-    signInWithPopup(auth, provider)
+   signInWithRedirect(auth, provider)
+
   }
   function logout(){
     signOut(auth)
