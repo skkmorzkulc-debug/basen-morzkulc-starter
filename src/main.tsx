@@ -13,7 +13,6 @@ import {
   setPersistence,
   browserLocalPersistence
 } from 'firebase/auth'
-
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 
 import Terminy from './pages/Terminy'
@@ -26,18 +25,16 @@ import './index.css'
 function RootApp() {
   const auth = getAuth(app)
 
-  // trwała sesja + silna diagnostyka redirectu
+  // Trwała sesja
   setPersistence(auth, browserLocalPersistence).catch((e) => {
     console.error('setPersistence error:', e)
+    alert('setPersistence error: ' + (e?.code || e?.message || e))
   })
 
+  // Obsługa wyniku redirectu po powrocie z Google
   getRedirectResult(auth)
     .then((res) => {
-      // gdy wracamy z Google, tu czasem przychodzi user/credential; gdy brak — zwraca null
       console.log('getRedirectResult:', res)
-      if (!res) {
-        console.log('No redirect result (normal if user clicked login for the first time)')
-      }
     })
     .catch((err) => {
       console.error('Google redirect error:', err?.code, err?.message)
@@ -96,13 +93,17 @@ function RootApp() {
 
   function login() {
     const provider = new GoogleAuthProvider()
-    // to zwykle pomaga przy "miganiu" okna
     provider.setCustomParameters({ prompt: 'select_account' })
+    console.log('LOGIN CLICK', {
+      origin: window.location.origin,
+      authDomain: app.options['authDomain'],
+    })
     signInWithRedirect(auth, provider).catch((err) => {
       console.error('signInWithRedirect error:', err?.code, err?.message)
       alert(`signInWithRedirect error: ${err?.code || ''} ${err?.message || ''}`)
     })
   }
+
   function logout() {
     signOut(auth)
   }
