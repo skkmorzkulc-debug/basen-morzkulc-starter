@@ -2,7 +2,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
-import { getAuth, onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut } from 'firebase/auth'
+import { getAuth, onAuthStateChanged, signInWithRedirect, GoogleAuthProvider, signOut, getRedirectResult } from 'firebase/auth'
+
 
 import { db } from './firebase'
 import {
@@ -18,6 +19,11 @@ import './index.css'
 
 function RootApp(){
   const auth = getAuth()
+// Handle Google redirect result (needed on production)
+getRedirectResult(auth).catch((err) => {
+  console.error('Google redirect error:', err);
+});
+
   const [user, setUser] = React.useState<any>(null)
   const [me, setMe] = React.useState<any>(null)
   const [isAdmin, setIsAdmin] = React.useState(false)
