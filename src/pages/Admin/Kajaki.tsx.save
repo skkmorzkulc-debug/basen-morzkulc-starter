@@ -1,0 +1,111 @@
+// src/pages/Admin/Kajaki.tsx
+import React from 'react'
+import { db } from '../../firebase'
+import {
+  collection, onSnapshot, addDoc, serverTimestamp,
+  doc, updateDoc, deleteDoc
+} from 'firebase/firestore'
+
+type Kayak = {
+  id: string
+  name: string
+  note?: string
+  active?: boolean
+  createdAt?: any
+}
+
+export default function Kajaki(){
+  const [rows, setRows] = React.useState<Kayak[]>([])
+  const [name, setName] = React.useState('')
+  const [note, setNote] = React.useState('')
+
+  React.useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'kayaks'), snap => {
+      const arr:Kayak[] = []
+      snap.forEach(d => arr.push({ id: d.id, ...(d.data() as any) }))
+      arr.sort((a,b) =>
+        (a.active===b.active?0:(a.active? -1:1)) ||
+        (a.name||'').localeCompare(b.name||'')
+      )
+      setRows(arr)
+    })
+    return () => unsub()
+  }, [])
+
+  async function addKayak(){
+    const n = name.trim()
+    if (!n) { alert('Podaj nazwę kajaka.'); return }
+    await addDoc(collection(db, 'kayaks'), {
+      name: n,
+      note: note.trim() || '',
+      active: true,
+      createdAt: serverTimestamp()
+    })
+    setName(''); setNote('')
+  }
+
+  async function setActive(id:string, val:boolean){
+    await updateDoc(doc(db,'kayaks',id), { active: val })
+  }
+
+  async function rename(id:string, newName:string){
+    const n = newName.trim()
+    if (!n) return
+    await updateDoc(doc(db,'kayaks',id), { name: n })
+  }
+
+  async function setNote(id:string, newNote:string){
+    await updateDoc(doc(db,'kayaks',id), { note: newNote })
+  }
+
+  async function remove(id:string){
+    if (!confirm('Usunąć kajak? (nie usuwa przydziałów historycznych)')) return
+    await deleteDoc(doc(db,'kayaks',id))
+  }
+
+  return (
+    <div>
+      <h2>Admin: Kajaki</h2>
+
+      <div style={{border:'1px solid #eee', borderRadius:8, padding:10, marginBottom:12, display:'grid', gap:6}}>
+        <div style={{fontWeight:600}}>Dodaj kajak</div>
+        <input value={name} onChange={e=>setName(e.target.value)} placeholder="Nazwa (np. Reval 16)" />
+        <input value={note} onChange={e=>setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" />
+        <button onClick={addKayak}>Dodaj</button>
+      </div>
+
+      {rows.length===0 ? <p>Brak kajaków.</p> : (
+        <ul style={{listStyle:'none', padding:0, display:'grid', gap:10}}>
+          {rows.map(k => (
+            <li key={k.id} style={{border:'1px solid #eee', borderRadius:8, padding:10}}>
+              <div style={{display:'grid', gap:6}}>
+                <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                  <input
+                    defaultValue={k.name}
+                    onBlur={(e)=>rename(k.id, e.currentTarget.value)}
+                    style={{minWidth:220}}
+                  />
+                  <label style={{display:'flex', gap:6, alignItems:'center'}}>
+                    <input
+                      type="checkbox"
+                      checked={!!k.active}
+                      onChange={(e)=>setActive(k.id, e.target.checked)}
+                    />
+                    Aktywny
+                  </label>
+                  <button onClick={()=>remove(k.id)} style={{marginLeft:'auto'}}>Usuń</button>
+                </div>
+                <input
+                  defaultValue={k.note || ''}
+                  onBlur={(e)=>setNote(k.id, e.currentTarget.value)}
+                  placeholder="Notatka…"
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+

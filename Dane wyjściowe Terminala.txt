@@ -1,0 +1,48 @@
+Last login: Sun Sep 14 14:14:16 on ttys000
+marcingruby@MacBook-Air-Marcin ~ % nano .env
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  UW PICO 5.09                       File: .env                       Modified  
+
+VITE_FIREBASE_API_KEY=AIzaSyAT-YAxNV_zU0Vshyn9g5ats8Foy8j-oB4
+VITE_FIREBASE_AUTH_DOMAIN=basen-morzkulc-c2a81.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=basen-morzkulc-c2a81
+VITE_FIREBASE_STORAGE_BUCKET=basen-morzkulc-c2a81.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=394719221966
+VITE_FIREBASE_APP_ID=1:394719221966:web:bc7da31688f3685f46189f
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+^G Get Help  ^O WriteOut  ^R Read File ^Y Prev Pg   ^K Cut Text  ^C Cur Pos   
+^X Exit      ^J Justify   ^W Where is  ^V Next Pg   ^U UnCut Text^T To Spell  

@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+    function isAdmin(uid) {
+      return isSignedIn() && userDoc(uid).data.roles.admin == true;
+    }
+    function isOrganizer(uid) {
+      return isSignedIn() && userDoc(uid).data.roles.organizer == true;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // USERS
+    match /users/{uid} {
+      // Użytkownik może utworzyć swój dokument tylko pod własnym UID, ze statusem "pending"
+      allow create: if isOwner(uid)
+        && request.resource.id == request.auth.uid
+        && request.resource.data.status == "pending";
+
+      // Czytanie: właściciel albo admin
+      allow read: if isOwner(uid) || isAdmin(request.auth.uid);
+
+      // Update:
+      //  - admin: pełny
+      //  - właściciel: TYLKO gdy nie zmienia pól wrażliwych (roles/status/email/uid)
+      allow update: if isAdmin(request.auth.uid)
+        || (isOwner(uid)
+            && request.resource.data.roles == resource.data.roles
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.email == resource.data.email
+            && request.resource.data.uid == resource.data.uid);
+
+      // Usuwanie userów tylko przez admina
+      allow delete: if isAdmin(request.auth.uid);
+    }
+
+    // POOLS (terminy) — admin lub organizer
+    match /pools/{poolId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin(request.auth.uid) || isOrganizer(request.auth.uid);
+    }
+
+    // BOOKINGS (zapisy na H1/H2/saunę)
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn();
+      // Zapisy tworzy każdy zalogowany
+      allow create: if isSignedIn();
+      // Aktualizacje (np. wypisz się, przypisz instruktora) — właściciel, admin lub organizer
+      allow update: if (isSignedIn() && resource.data.uid == request.auth.uid)
+                 || isAdmin(request.auth.uid)
+                 || isOrganizer(request.auth.uid);
+      // Usuwanie — jw. (zwykle nie usuwamy, tylko status: cancelled)
+      allow delete: if (isSignedIn() && resource.data.uid == request.auth.uid)
+                 || isAdmin(request.auth.uid)
+                 || isOrganizer(request.auth.uid);
+    }
+
+    // ALLOCATIONS (przydziały kajaków na daną godzinę)
+    match /allocations/{allocId} {
+      allow read: if isSignedIn();
+      // Tworzyć/zmieniać/usuwać może właściciel alokacji (uid), admin lub organizer
+      allow create, update, delete: if (isSignedIn()
+        && (
+          (request.resource != null && request.resource.data.uid == request.auth.uid)
+          || (resource != null && resource.data.uid == request.auth.uid)
+          || isAdmin(request.auth.uid)
+          || isOrganizer(request.auth.uid)
+        ));
+    }
+
+    // KAYAKS (inwentarz kajaków)
+    match /kayaks/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin(request.auth.uid) || isOrganizer(request.auth.uid);
+    }
+  }
+}
