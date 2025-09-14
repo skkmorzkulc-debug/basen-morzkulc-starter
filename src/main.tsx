@@ -14,9 +14,7 @@ import {
   browserLocalPersistence
 } from 'firebase/auth'
 
-import {
-  doc, getDoc, setDoc, onSnapshot
-} from 'firebase/firestore'
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 
 import Terminy from './pages/Terminy'
 import AdminTerminy from './pages/Admin/Terminy'
@@ -28,11 +26,23 @@ import './index.css'
 function RootApp() {
   const auth = getAuth(app)
 
-  // trwała sesja + obsługa wyniku redirectu (po powrocie z Google)
-  setPersistence(auth, browserLocalPersistence).catch(console.error)
-  getRedirectResult(auth).catch((err) => {
-    console.error('Google redirect error:', err)
+  // trwała sesja + silna diagnostyka redirectu
+  setPersistence(auth, browserLocalPersistence).catch((e) => {
+    console.error('setPersistence error:', e)
   })
+
+  getRedirectResult(auth)
+    .then((res) => {
+      // gdy wracamy z Google, tu czasem przychodzi user/credential; gdy brak — zwraca null
+      console.log('getRedirectResult:', res)
+      if (!res) {
+        console.log('No redirect result (normal if user clicked login for the first time)')
+      }
+    })
+    .catch((err) => {
+      console.error('Google redirect error:', err?.code, err?.message)
+      alert(`Google redirect error: ${err?.code || ''} ${err?.message || ''}`)
+    })
 
   const [user, setUser] = React.useState<any>(null)
   const [me, setMe] = React.useState<any>(null)
@@ -42,6 +52,7 @@ function RootApp() {
     let profileUnsub: null | (() => void) = null
 
     const authUnsub = onAuthStateChanged(auth, async (u) => {
+      console.log('onAuthStateChanged user =', u?.email || null)
       if (profileUnsub) { profileUnsub(); profileUnsub = null }
 
       setUser(u || null)
@@ -85,7 +96,12 @@ function RootApp() {
 
   function login() {
     const provider = new GoogleAuthProvider()
-    signInWithRedirect(auth, provider)
+    // to zwykle pomaga przy "miganiu" okna
+    provider.setCustomParameters({ prompt: 'select_account' })
+    signInWithRedirect(auth, provider).catch((err) => {
+      console.error('signInWithRedirect error:', err?.code, err?.message)
+      alert(`signInWithRedirect error: ${err?.code || ''} ${err?.message || ''}`)
+    })
   }
   function logout() {
     signOut(auth)
